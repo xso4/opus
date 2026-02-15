@@ -1,0 +1,43 @@
+name: Windows Build Upload
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-upload.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/build-upload.yml'
+
+jobs:
+  build:
+    name: Windows ${{ matrix.kind }} build
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: shared
+            build_shared: ON
+            artifact_name: opus-windows-x64-shared
+          - kind: static
+            build_shared: OFF
+            artifact_name: opus-windows-x64-static
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Download models
+        run: .\autogen.bat
+      - name: Configure
+        run: cmake -B build\${{ matrix.kind }} -S . -G "Visual Studio 17 2022" -A x64 -DBUILD_SHARED_LIBS=${{ matrix.build_shared }} -DCMAKE_INSTALL_PREFIX=install\${{ matrix.kind }}
+      - name: Build
+        run: cmake --build build\${{ matrix.kind }} --config Release
+      - name: Install
+        run: cmake --install build\${{ matrix.kind }} --config Release
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: install\${{ matrix.kind }}
