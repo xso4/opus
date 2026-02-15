@@ -28,8 +28,8 @@ jobs:
         # Process Man pages (Section 3)
         for f in doc/man/man3/*.3; do
           filename=$(basename "$f" .3)
-          # Convert Man to Text using groff
-          groff -Tutf8 -man "$f" | col -bx > "doc/txt/${filename}.txt"
+          # Convert Man to clean Text using pandoc (avoids ANSI codes from groff)
+          pandoc -f man -t plain "$f" -o "doc/txt/${filename}.txt"
           # Convert Man to Markdown using pandoc
           pandoc -f man -t markdown "$f" -o "doc/md/${filename}.md"
         done
